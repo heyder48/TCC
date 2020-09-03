@@ -16,45 +16,48 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 import argparse
 import sys
-import socket
+
+import thingspeak
 
 
-
-import serial
+#import socket
+#import serial
 
 tf.disable_v2_behavior()
 scoreMin = 0.4
-tempRoomAux = 20
-tempExtAux = 20
-tempExtRoomAux = 20
-powerAux = 1.5
+
 
 #Serial Comunication
-try:
-    ser = serial.Serial('/dev/ttyACM0', 9600)
-    ser.reset_input_buffer()
+#try:
+    #ser = serial.Serial('/dev/ttyACM0', 9600)
+    #ser.reset_input_buffer()
 
-except:
-    print("Serial Error")
-    exit()
+#except:
+    #print("Serial Error")
+    #exit()
     
 
 #UDP comunication
 
-Address = "192.168.1.114"
-Port = 9090
-MyAddress = "192.168.1.117"
-MyPort = 25000
+#Address = "192.168.1.114"
+#Port = 9090
+#MyAddress = "192.168.1.117"
+#MyPort = 25000
 
-try:
-    MySocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+#try:
+    #MySocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
    
    
-except socket.error:
-   print("Socket nao criado")
-   print(socket.error)
-   exit()
+#except socket.error:
+   #print("Socket nao criado")
+   #print(socket.error)
+   #exit()
 
+#thingspeak
+channelID = 1133792
+writeKey = "SOUG1DS58MXB7HVU"
+
+Channel = thingspeak.Channel(id=channelID,api_key=writeKey)
 
 
 #Camera constants
@@ -231,36 +234,12 @@ while(True):
     cv2.putText(frame,'Count = '+str(count),(10,400),cv2.FONT_HERSHEY_SIMPLEX, 1.25,(255,255,0),2,cv2.LINE_AA)
     cv2.putText(frame,"FPS: {0:.2f}".format(frame_rate_calc),(30,50),font,1,(255,255,0),2,cv2.LINE_AA)
     
+    #send data to thingspeak
     try:
-        
-        tempRoom, tempExt, tempExtRoom, power = Arduino(ser)  
-            
-        tempRoomAux = tempRoom
-        tempExtAux = tempExt
-        tempExtRoomAux = tempExtRoom
-        powerAux = power
-        
-        print("Temperatura Sala ={0:.2f} C".format(tempRoom))
-        print("Temperatura Extena ={0:.2f} C" .format(tempExt))
-        print("Temperatura Sala Externa ={0:.2f} C".format(tempExtRoom))
-        print("Potencia ={0:.2f} kW \n".format(power))
-        
-        message = str(tempRoom)+' '+str(tempExt)+' '+str(tempExtRoom)+' '+str(power)+' '+str(count)
-            
+        response = Channel.update({1:count})
+        print(response)
     except:
-        print("Temperatura Sala ={0:.2f} C".format(tempRoomAux))
-        print("Temperatura Extena ={0:.2f} C" .format(tempExtAux))
-        print("Temperatura Sala Externa ={0:.2f} C".format(tempExtRoomAux))
-        print("Potencia ={0:.2f} kW \n".format(powerAux))
-        
-        message = str(tempRoomAux)+' '+str(tempExtAux)+' '+str(tempExtRoomAux)+' '+str(powerAux)+' '+str(count)
-        pass
-    
-
-    
-    
-         
-    UDPsend(message)
+        print("Connection Failed")
         
     cv2.imshow('Object detector', frame)
     
